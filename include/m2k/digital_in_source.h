@@ -23,6 +23,7 @@
 
 #include <m2k/api.h>
 #include <gnuradio/sync_block.h>
+#include <libm2k/m2k.hpp>
 
 namespace gr {
 namespace m2k {
@@ -46,6 +47,12 @@ static sptr make(const std::string &uri,
 		 const int channel,
 		 double sampling_frequency,
 		 int kernel_buffers);
+
+static sptr make_from(libm2k::context::M2k *context,
+                     int buffer_size,
+                     const int channel,
+                     double sampling_frequency,
+                     int kernel_buffers);
 
 virtual void set_params(double sampling_frequency) = 0;
 

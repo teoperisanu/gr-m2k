@@ -39,22 +39,33 @@ digital_in_source::make(const std::string &uri,
 			int kernel_buffers)
 {
 	return gnuradio::get_initial_sptr
-		(new digital_in_source_impl(uri, buffer_size, channel, sampling_frequency, kernel_buffers));
+		(new digital_in_source_impl(analog_in_source_impl::get_context(uri), buffer_size, channel, sampling_frequency, kernel_buffers));
 }
 
-digital_in_source_impl::digital_in_source_impl(const std::string &uri,
+digital_in_source::sptr
+digital_in_source::make_from(libm2k::context::M2k *context,
+                        int buffer_size,
+                        const int channel,
+                        double sampling_frequency,
+                        int kernel_buffers)
+{
+    return gnuradio::get_initial_sptr
+            (new digital_in_source_impl(context, buffer_size, channel, sampling_frequency, kernel_buffers));
+}
+
+digital_in_source_impl::digital_in_source_impl(libm2k::context::M2k *context,
 					       int buffer_size,
 					       const int channel,
 					       double sampling_frequency,
 					       int kernel_buffers)
 	: gr::sync_block("digital_in_source",
 			 gr::io_signature::make(0, 0, 0),
-			 gr::io_signature::make(1, 2, sizeof(unsigned short))),
-	d_uri(uri),
+			 gr::io_signature::make(1, 1, sizeof(unsigned short))),
+	d_uri(context->getUri()),
 	d_buffer_size(buffer_size),
 	d_channel(channel)
 {
-	libm2k::context::M2k *context = analog_in_source_impl::get_context(uri);
+    analog_in_source_impl::add_context(context);
 	d_digital = context->getDigital();
 
 	d_digital->setKernelBuffersCountIn(kernel_buffers);
@@ -90,23 +101,19 @@ int digital_in_source_impl::work(int noutput_items,
 	}
 
 	unsigned long nb_samples = std::min(d_items_in_buffer, (unsigned long) noutput_items);
-	unsigned int sample_index, channel_index, out_stream_index;
+	unsigned int out_stream_index = 0;
 
-	for (out_stream_index = 0; out_stream_index < output_items.size(); out_stream_index++) {
-		if (!d_sample_index) {
-			tag_t tag;
-			tag.value = pmt::from_long(d_items_in_buffer);
-			tag.offset = nitems_written(out_stream_index);
-			tag.key = pmt::intern("buffer_start");
-			tag.srcid = alias_pmt();
+    if (!d_sample_index) {
+        tag_t tag;
+        tag.value = pmt::from_long(d_items_in_buffer);
+        tag.offset = nitems_written(out_stream_index);
+        tag.key = pmt::intern("buffer_start");
+        tag.srcid = alias_pmt();
 
-			add_item_tag(out_stream_index, tag);
-		}
-		short *out = (short *) output_items[out_stream_index];
-		for (sample_index = 0; sample_index < nb_samples; sample_index++) {
-			out[sample_index] = get_channel_value(d_raw_samples[sample_index], out_stream_index);
-		}
-	}
+        add_item_tag(out_stream_index, tag);
+    }
+    uint16_t *out = (uint16_t *) output_items[out_stream_index];
+    memcpy(out, d_raw_samples + d_sample_index, sizeof(uint16_t) * nb_samples);
 	d_items_in_buffer -= nb_samples;
 	d_sample_index += nb_samples;
 

@@ -44,7 +44,7 @@ private:
     bool d_stream_voltage_values;
 
 public:
-    analog_in_source_impl(const std::string &uri,
+    analog_in_source_impl(libm2k::context::M2k *context,
                           int buffer_size,
                           const std::vector<int> &channels,
                           std::vector<int> ranges,
@@ -76,6 +76,8 @@ public:
                      std::vector<double> trigger_level);
 
     static libm2k::context::M2k *get_context(const std::string &uri);
+
+    static void add_context(libm2k::context::M2k *context);
 
     static void remove_contexts(const std::string &uri);
 };

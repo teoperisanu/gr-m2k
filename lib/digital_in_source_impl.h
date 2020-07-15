@@ -38,7 +38,7 @@ private:
 	unsigned long d_items_in_buffer;
 	const unsigned short *d_raw_samples;
 public:
-	digital_in_source_impl(const std::string &uri,
+	digital_in_source_impl(libm2k::context::M2k *context,
 			       int buffer_size,
 			       const int channel,
 			       double sampling_frequency,
