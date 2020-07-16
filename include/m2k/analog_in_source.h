@@ -70,7 +70,8 @@ public:
                      std::vector<int> trigger_mode,
                      int trigger_source,
                      int trigger_delay,
-                     std::vector<double> trigger_level);
+                     std::vector<double> trigger_level,
+                     unsigned int timeout);
 
     static sptr make_from(libm2k::context::M2k *context,
                          int buffer_size,
@@ -85,7 +86,8 @@ public:
                          std::vector<int> trigger_mode,
                          int trigger_source,
                          int trigger_delay,
-                         std::vector<double> trigger_level);
+                         std::vector<double> trigger_level,
+                         unsigned int timeout);
 
     virtual void set_params(std::vector<int> ranges,
                             double sampling_frequency,
@@ -96,6 +98,8 @@ public:
                              int trigger_source,
                              int trigger_delay,
                              std::vector<double> trigger_level) = 0;
+
+    virtual void set_timeout_ms(unsigned int timeout) = 0;
 
 };
 

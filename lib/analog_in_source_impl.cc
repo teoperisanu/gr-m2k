@@ -24,6 +24,8 @@
 #include "analog_in_source_impl.h"
 #include <gnuradio/io_signature.h>
 #include <libm2k/m2k.hpp>
+#include <libm2k/enums.hpp>
+#include <libm2k/m2kexceptions.hpp>
 #include <libm2k/contextbuilder.hpp>
 #include <libm2k/analog/m2kanalogin.hpp>
 #include <boost/lexical_cast.hpp>
@@ -46,14 +48,15 @@ analog_in_source::make(const std::string &uri,
                        std::vector<int> trigger_mode,
                        int trigger_source,
                        int trigger_delay,
-                       std::vector<double> trigger_level)
+                       std::vector<double> trigger_level,
+                       unsigned int timeout)
 {
     return gnuradio::get_initial_sptr
         (new analog_in_source_impl(analog_in_source_impl::get_context(uri), buffer_size, channels, ranges, sampling_frequency, oversampling_ratio,
                                    kernel_buffers,
                                    calibrate_ADC, stream_voltage_values, trigger_condition, trigger_mode,
                                    trigger_source,
-                                   trigger_delay, trigger_level));
+                                   trigger_delay, trigger_level, timeout));
 }
 
 analog_in_source::sptr
@@ -70,14 +73,15 @@ analog_in_source::make_from(libm2k::context::M2k *context,
                            std::vector<int> trigger_mode,
                            int trigger_source,
                            int trigger_delay,
-                           std::vector<double> trigger_level)
+                           std::vector<double> trigger_level,
+                           unsigned int timeout)
 {
     return gnuradio::get_initial_sptr
             (new analog_in_source_impl(context, buffer_size, channels, ranges, sampling_frequency, oversampling_ratio,
                                        kernel_buffers,
                                        calibrate_ADC, stream_voltage_values, trigger_condition, trigger_mode,
                                        trigger_source,
-                                       trigger_delay, trigger_level));
+                                       trigger_delay, trigger_level, timeout));
 }
 
 analog_in_source_impl::analog_in_source_impl(libm2k::context::M2k *context,
@@ -93,14 +97,16 @@ analog_in_source_impl::analog_in_source_impl(libm2k::context::M2k *context,
                                              std::vector<int> trigger_mode,
                                              int trigger_source,
                                              int trigger_delay,
-                                             std::vector<double> trigger_level)
+                                             std::vector<double> trigger_level,
+                                             unsigned int timeout)
     : gr::sync_block("analog_in_source",
                      gr::io_signature::make(0, 0, 0),
                      gr::io_signature::make(1, 2, sizeof(float))),
     d_uri(context->getUri()),
     d_buffer_size(buffer_size),
     d_channels(channels),
-    d_stream_voltage_values(stream_voltage_values)
+    d_stream_voltage_values(stream_voltage_values),
+    d_port_id(pmt::mp("msg"))
 {
     add_context(context);
     d_analog_in = context->getAnalogIn();
@@ -108,6 +114,7 @@ analog_in_source_impl::analog_in_source_impl(libm2k::context::M2k *context,
     d_analog_in->setKernelBuffersCount(kernel_buffers);
     set_params(ranges, sampling_frequency, oversampling_ratio);
     set_trigger(trigger_condition, trigger_mode, trigger_source, trigger_delay, trigger_level);
+    set_timeout_ms(timeout);
 
     if (calibrate_ADC) {
         context->calibrateADC();
@@ -119,6 +126,7 @@ analog_in_source_impl::analog_in_source_impl(libm2k::context::M2k *context,
 
     d_items_in_buffer = 0;
     set_output_multiple(0x400);
+    message_port_register_out(d_port_id);
 }
 
 analog_in_source_impl::~analog_in_source_impl()
@@ -161,6 +169,12 @@ void analog_in_source_impl::set_trigger(std::vector<int> trigger_condition,
     trigger->setAnalogDelay(trigger_delay);
 }
 
+void analog_in_source_impl::set_timeout_ms(unsigned int timeout)
+{
+    auto context = get_context(d_uri);
+    context->setTimeout(timeout);
+}
+
 libm2k::context::M2k *analog_in_source_impl::get_context(const std::string &uri)
 {
     auto element = s_contexts.find(uri);
@@ -201,6 +215,8 @@ int analog_in_source_impl::work(int noutput_items,
     if (!d_items_in_buffer) {
         try {
             d_raw_samples = d_analog_in->getSamplesRawInterleaved(d_buffer_size);
+        } catch (timeout_exception &e) {
+            message_port_pub(d_port_id, pmt::mp("timeout"));
         } catch (std::exception &e) {
             std::cout << e.what() << std::endl;
             return -1;

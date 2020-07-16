@@ -43,6 +43,8 @@ private:
     const short *d_raw_samples;
     bool d_stream_voltage_values;
 
+    pmt::pmt_t d_port_id;
+
 public:
     analog_in_source_impl(libm2k::context::M2k *context,
                           int buffer_size,
@@ -57,7 +59,8 @@ public:
                           std::vector<int> trigger_mode,
                           int trigger_source,
                           int trigger_delay,
-                          std::vector<double> trigger_level);
+                          std::vector<double> trigger_level,
+                          unsigned int timeout);
 
     ~analog_in_source_impl();
 
@@ -74,6 +77,8 @@ public:
                      int trigger_source,
                      int trigger_delay,
                      std::vector<double> trigger_level);
+
+    void set_timeout_ms(unsigned int timeout);
 
     static libm2k::context::M2k *get_context(const std::string &uri);
 
