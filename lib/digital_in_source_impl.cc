@@ -60,7 +60,7 @@ digital_in_source_impl::digital_in_source_impl(libm2k::context::M2k *context,
 					       int kernel_buffers)
 	: gr::sync_block("digital_in_source",
 			 gr::io_signature::make(0, 0, 0),
-			 gr::io_signature::make(1, 1, sizeof(unsigned short))),
+			 gr::io_signature::make(1, 1, sizeof(float))),
 	d_uri(context->getUri()),
 	d_buffer_size(buffer_size),
 	d_channel(channel)
@@ -112,8 +112,11 @@ int digital_in_source_impl::work(int noutput_items,
 
         add_item_tag(out_stream_index, tag);
     }
-    uint16_t *out = (uint16_t *) output_items[out_stream_index];
-    memcpy(out, d_raw_samples + d_sample_index, sizeof(uint16_t) * nb_samples);
+    float *out = (float *) output_items[out_stream_index];
+    //memcpy(out, d_raw_samples + d_sample_index, sizeof(uint16_t) * nb_samples);
+    for (int i = 0; i < nb_samples; ++i) {
+		out[i] = get_channel_value(0, d_raw_samples[d_sample_index + i]);
+	}
 	d_items_in_buffer -= nb_samples;
 	d_sample_index += nb_samples;
 
