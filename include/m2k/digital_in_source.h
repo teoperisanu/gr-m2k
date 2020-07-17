@@ -46,15 +46,17 @@ static sptr make(const std::string &uri,
 		 int buffer_size,
 		 const int channel,
 		 double sampling_frequency,
-		 int kernel_buffers);
+		 int kernel_buffers,
+		 bool streaming);
 
 static sptr make_from(libm2k::context::M2k *context,
                      int buffer_size,
                      const int channel,
                      double sampling_frequency,
-                     int kernel_buffers);
+                     int kernel_buffers,
+                     bool streaming);
 
-virtual void set_params(double sampling_frequency) = 0;
+virtual void set_params(double sampling_frequency, bool streaming) = 0;
 
 };
 

@@ -28,6 +28,11 @@ parameters:
     dtype: int
     default: 4
 
+  - id: streaming
+    label: Streaming
+    dtype: bool
+    default: True
+
 asserts:
   - ${kernel_buffers > 0 and kernel_buffers <= 64}
 
@@ -44,9 +49,10 @@ templates:
     ${buffer_size},
     ${channel},
     ${sampling_frequency},
-    ${kernel_buffers})
+    ${kernel_buffers},
+    ${streaming})
   callbacks:
-    - set_params(${sampling_frequency})
+    - set_params(${sampling_frequency}, ${streaming})
 
 documentation: |-
   This block allows for streaming data from ADALM2000

@@ -36,10 +36,11 @@ digital_in_source::make(const std::string &uri,
 			int buffer_size,
 			const int channel,
 			double sampling_frequency,
-			int kernel_buffers)
+			int kernel_buffers,
+			bool streaming)
 {
 	return gnuradio::get_initial_sptr
-		(new digital_in_source_impl(analog_in_source_impl::get_context(uri), buffer_size, channel, sampling_frequency, kernel_buffers));
+		(new digital_in_source_impl(analog_in_source_impl::get_context(uri), buffer_size, channel, sampling_frequency, kernel_buffers, streaming));
 }
 
 digital_in_source::sptr
@@ -47,17 +48,19 @@ digital_in_source::make_from(libm2k::context::M2k *context,
                         int buffer_size,
                         const int channel,
                         double sampling_frequency,
-                        int kernel_buffers)
+                        int kernel_buffers,
+                        bool streaming)
 {
     return gnuradio::get_initial_sptr
-            (new digital_in_source_impl(context, buffer_size, channel, sampling_frequency, kernel_buffers));
+            (new digital_in_source_impl(context, buffer_size, channel, sampling_frequency, kernel_buffers, streaming));
 }
 
 digital_in_source_impl::digital_in_source_impl(libm2k::context::M2k *context,
 					       int buffer_size,
 					       const int channel,
 					       double sampling_frequency,
-					       int kernel_buffers)
+					       int kernel_buffers,
+					       bool streaming)
 	: gr::sync_block("digital_in_source",
 			 gr::io_signature::make(0, 0, 0),
 			 gr::io_signature::make(1, 1, sizeof(float))),
@@ -69,7 +72,7 @@ digital_in_source_impl::digital_in_source_impl(libm2k::context::M2k *context,
 	d_digital = context->getDigital();
 
 	d_digital->setKernelBuffersCountIn(kernel_buffers);
-	set_params(sampling_frequency);
+	set_params(sampling_frequency, streaming);
 
 	d_items_in_buffer = 0;
 	set_output_multiple(0x400);
@@ -80,9 +83,11 @@ digital_in_source_impl::~digital_in_source_impl()
 	analog_in_source_impl::remove_contexts(d_uri);
 }
 
-void digital_in_source_impl::set_params(double sampling_frequency)
+void digital_in_source_impl::set_params(double sampling_frequency, bool streaming)
 {
 	d_digital->setSampleRateIn(sampling_frequency);
+	auto trigger = d_digital->getTrigger();
+	//trigger->setDigitalStreamingFlag(streaming);
 }
 
 int digital_in_source_impl::work(int noutput_items,

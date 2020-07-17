@@ -42,7 +42,8 @@ public:
 			       int buffer_size,
 			       const int channel,
 			       double sampling_frequency,
-			       int kernel_buffers);
+			       int kernel_buffers,
+			       bool streaming);
 
 	~digital_in_source_impl();
 
@@ -50,7 +51,7 @@ public:
 		 gr_vector_const_void_star &input_items,
 		 gr_vector_void_star &output_items);
 
-	void set_params(double sampling_frequency);
+	void set_params(double sampling_frequency, bool streaming);
 
 	unsigned short get_channel_value(unsigned int channel, unsigned short sample);
 };

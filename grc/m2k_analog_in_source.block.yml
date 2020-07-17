@@ -105,6 +105,11 @@ parameters:
     dtype: float
     default: 1
 
+  - id: streaming
+    label: Streaming
+    dtype: bool
+    default: True
+
   - id: timeout
     label: Timeout (ms)
     dtype: int
@@ -141,6 +146,7 @@ templates:
     ${trigger_source},
     ${trigger_delay},
     [${trigger_level_ch1}, ${trigger_level_ch2}],
+    ${streaming},
     ${timeout})
   callbacks:
     - set_params([${range_1}, ${range_2}],
@@ -151,7 +157,8 @@ templates:
       [${trigger_mode_ch1}, ${trigger_mode_ch2}],
       ${trigger_source},
       ${trigger_delay},
-      [${trigger_level_ch1}, ${trigger_level_ch2}])
+      [${trigger_level_ch1}, ${trigger_level_ch2}],
+      ${streaming})
 
     - set_timeout_ms(${timeout})
 

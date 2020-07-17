@@ -60,6 +60,7 @@ public:
                           int trigger_source,
                           int trigger_delay,
                           std::vector<double> trigger_level,
+                          bool streaming,
                           unsigned int timeout);
 
     ~analog_in_source_impl();
@@ -76,7 +77,8 @@ public:
                      std::vector<int> trigger_mode,
                      int trigger_source,
                      int trigger_delay,
-                     std::vector<double> trigger_level);
+                     std::vector<double> trigger_level,
+                     bool streaming);
 
     void set_timeout_ms(unsigned int timeout);
 

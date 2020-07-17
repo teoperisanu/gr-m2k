@@ -71,6 +71,7 @@ public:
                      int trigger_source,
                      int trigger_delay,
                      std::vector<double> trigger_level,
+                     bool streaming,
                      unsigned int timeout);
 
     static sptr make_from(libm2k::context::M2k *context,
@@ -87,6 +88,7 @@ public:
                          int trigger_source,
                          int trigger_delay,
                          std::vector<double> trigger_level,
+                         bool streaming,
                          unsigned int timeout);
 
     virtual void set_params(std::vector<int> ranges,
@@ -97,7 +99,8 @@ public:
                              std::vector<int> trigger_mode,
                              int trigger_source,
                              int trigger_delay,
-                             std::vector<double> trigger_level) = 0;
+                             std::vector<double> trigger_level,
+                             bool streaming) = 0;
 
     virtual void set_timeout_ms(unsigned int timeout) = 0;
 
