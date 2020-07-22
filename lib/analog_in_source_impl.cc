@@ -50,14 +50,15 @@ analog_in_source::make(const std::string &uri,
                        int trigger_delay,
                        std::vector<double> trigger_level,
                        bool streaming,
-                       unsigned int timeout)
+                       unsigned int timeout,
+                       bool deinit)
 {
     return gnuradio::get_initial_sptr
         (new analog_in_source_impl(analog_in_source_impl::get_context(uri),buffer_size, channels, ranges, sampling_frequency, oversampling_ratio,
                                    kernel_buffers,
                                    calibrate_ADC, stream_voltage_values, trigger_condition, trigger_mode,
                                    trigger_source,
-                                   trigger_delay, trigger_level, streaming, timeout));
+                                   trigger_delay, trigger_level, streaming, timeout, deinit));
 }
 
 analog_in_source::sptr
@@ -76,14 +77,15 @@ analog_in_source::make_from(libm2k::context::M2k *context,
                            int trigger_delay,
                            std::vector<double> trigger_level,
                            bool streaming,
-                           unsigned int timeout)
+                           unsigned int timeout,
+                           bool deinit)
 {
     return gnuradio::get_initial_sptr
             (new analog_in_source_impl(context, buffer_size, channels, ranges, sampling_frequency, oversampling_ratio,
                                        kernel_buffers,
                                        calibrate_ADC, stream_voltage_values, trigger_condition, trigger_mode,
                                        trigger_source,
-                                       trigger_delay, trigger_level, streaming, timeout));
+                                       trigger_delay, trigger_level, streaming, timeout, deinit));
 }
 
 analog_in_source_impl::analog_in_source_impl(libm2k::context::M2k *context,
@@ -101,7 +103,8 @@ analog_in_source_impl::analog_in_source_impl(libm2k::context::M2k *context,
                                              int trigger_delay,
                                              std::vector<double> trigger_level,
                                              bool streaming,
-                                             unsigned int timeout)
+                                             unsigned int timeout,
+                                             bool deinit)
     : gr::sync_block("analog_in_source",
                      gr::io_signature::make(0, 0, 0),
                      gr::io_signature::make(1, 2, sizeof(float))),
@@ -109,6 +112,7 @@ analog_in_source_impl::analog_in_source_impl(libm2k::context::M2k *context,
     d_buffer_size(buffer_size),
     d_channels(channels),
     d_stream_voltage_values(stream_voltage_values),
+    d_deinit(deinit),
     d_port_id(pmt::mp("msg"))
 {
     add_context(context);
@@ -134,7 +138,13 @@ analog_in_source_impl::analog_in_source_impl(libm2k::context::M2k *context,
 
 analog_in_source_impl::~analog_in_source_impl()
 {
-    remove_contexts(d_uri);
+    if (d_deinit) {
+        std::cout << "DEINIT - ";
+        remove_contexts(d_uri);
+    } else {
+        std::cout << "NO DEINIT - ";
+    }
+    std::cout << d_deinit << std::endl;
 }
 
 void analog_in_source_impl::set_params(std::vector<int> ranges,
@@ -162,6 +172,7 @@ void analog_in_source_impl::set_trigger(std::vector<int> trigger_condition,
 {
     libm2k::M2kHardwareTrigger *trigger = d_analog_in->getTrigger();
 
+    trigger->setAnalogStreamingFlag(false);
     for (int i = 0; i < d_channels.size(); ++i) {
         if (d_channels.at(i)) {
             trigger->setAnalogCondition(i, static_cast<libm2k::M2K_TRIGGER_CONDITION_ANALOG>(trigger_condition[i]));
@@ -171,7 +182,7 @@ void analog_in_source_impl::set_trigger(std::vector<int> trigger_condition,
     }
     trigger->setAnalogSource(static_cast<libm2k::M2K_TRIGGER_SOURCE_ANALOG>(trigger_source));
     trigger->setAnalogDelay(trigger_delay);
-    //trigger->setAnalogStreamingFlag(streaming);
+    trigger->setAnalogStreamingFlag(streaming);
 }
 
 void analog_in_source_impl::set_timeout_ms(unsigned int timeout)
@@ -231,7 +242,7 @@ int analog_in_source_impl::work(int noutput_items,
             return 0;
         } catch (std::exception &e) {
             std::cout << e.what() << std::endl;
-            return -1;
+            return 0;
         }
         d_items_in_buffer = (unsigned long) d_buffer_size;
         d_sample_index = 0;

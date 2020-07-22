@@ -36,6 +36,7 @@ private:
     libm2k::analog::M2kAnalogIn *d_analog_in;
     const std::string d_uri;
     std::vector<int> d_channels;
+    bool d_deinit;
 
     unsigned int d_buffer_size;
     unsigned int d_sample_index;
@@ -61,7 +62,8 @@ public:
                           int trigger_delay,
                           std::vector<double> trigger_level,
                           bool streaming,
-                          unsigned int timeout);
+                          unsigned int timeout,
+                          bool deinit);
 
     ~analog_in_source_impl();
 

@@ -87,7 +87,7 @@ void digital_in_source_impl::set_params(double sampling_frequency, bool streamin
 {
 	d_digital->setSampleRateIn(sampling_frequency);
 	auto trigger = d_digital->getTrigger();
-	//trigger->setDigitalStreamingFlag(streaming);
+	trigger->setDigitalStreamingFlag(streaming);
 }
 
 int digital_in_source_impl::work(int noutput_items,
