@@ -46,6 +46,8 @@ private:
 
     pmt::pmt_t d_port_id;
 
+    boost::mutex d_buffer_mutex;
+
 public:
     analog_in_source_impl(libm2k::context::M2k *context,
                           int buffer_size,
@@ -89,6 +91,8 @@ public:
     static void add_context(libm2k::context::M2k *context);
 
     static void remove_contexts(const std::string &uri);
+
+    void set_buffer_size(int buffer_size);
 };
 
 } // namespace m2k

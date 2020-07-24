@@ -224,11 +224,24 @@ void analog_in_source_impl::remove_contexts(const std::string &uri)
     }
 }
 
+void analog_in_source_impl::set_buffer_size(int buffer_size)
+{
+	if (d_buffer_size != buffer_size) {
+
+		boost::unique_lock<boost::mutex> lock(d_buffer_mutex);
+
+		d_items_in_buffer = 0;
+		d_buffer_size = buffer_size;
+	}
+}
+
 
 int analog_in_source_impl::work(int noutput_items,
                                 gr_vector_const_void_star &input_items,
                                 gr_vector_void_star &output_items)
 {
+	boost::unique_lock<boost::mutex> lock(d_buffer_mutex);
+
     if (!d_items_in_buffer) {
         try {
             d_raw_samples = d_analog_in->getSamplesRawInterleaved(d_buffer_size);

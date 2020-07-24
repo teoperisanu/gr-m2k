@@ -58,6 +58,8 @@ static sptr make_from(libm2k::context::M2k *context,
 
 virtual void set_params(double sampling_frequency, bool streaming) = 0;
 
+virtual void set_buffer_size(int buffer_size) = 0;
+
 };
 
 

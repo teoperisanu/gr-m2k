@@ -106,6 +106,8 @@ public:
 
     virtual void set_timeout_ms(unsigned int timeout) = 0;
 
+    virtual void set_buffer_size(int buffer_size) = 0;
+
 };
 
 

@@ -37,6 +37,8 @@ private:
 	unsigned int d_sample_index;
 	unsigned long d_items_in_buffer;
 	const unsigned short *d_raw_samples;
+
+	boost::mutex d_buffer_mutex;
 public:
 	digital_in_source_impl(libm2k::context::M2k *context,
 			       int buffer_size,
@@ -54,6 +56,8 @@ public:
 	void set_params(double sampling_frequency, bool streaming);
 
 	unsigned short get_channel_value(unsigned int channel, unsigned short sample);
+
+	void set_buffer_size(int buffer_size);
 };
 
 } // namespace m2k

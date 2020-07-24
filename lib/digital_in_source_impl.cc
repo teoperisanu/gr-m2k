@@ -26,6 +26,7 @@
 #include <gnuradio/io_signature.h>
 #include <libm2k/m2k.hpp>
 #include <boost/lexical_cast.hpp>
+#include <libm2k/m2kexceptions.hpp>
 
 
 namespace gr {
@@ -63,7 +64,7 @@ digital_in_source_impl::digital_in_source_impl(libm2k::context::M2k *context,
 					       bool streaming)
 	: gr::sync_block("digital_in_source",
 			 gr::io_signature::make(0, 0, 0),
-			 gr::io_signature::make(1, 1, sizeof(float))),
+			 gr::io_signature::make(1, 1, sizeof(uint16_t))),
 	d_uri(context->getUri()),
 	d_buffer_size(buffer_size),
 	d_channel(channel)
@@ -80,7 +81,7 @@ digital_in_source_impl::digital_in_source_impl(libm2k::context::M2k *context,
 
 digital_in_source_impl::~digital_in_source_impl()
 {
-	analog_in_source_impl::remove_contexts(d_uri);
+//	analog_in_source_impl::remove_contexts(d_uri);
 }
 
 void digital_in_source_impl::set_params(double sampling_frequency, bool streaming)
@@ -94,12 +95,25 @@ int digital_in_source_impl::work(int noutput_items,
 				gr_vector_const_void_star &input_items,
 				gr_vector_void_star &output_items)
 {
+	boost::unique_lock<boost::mutex> lock(d_buffer_mutex);
+
 	if (!d_items_in_buffer) {
 		try {
 			d_raw_samples = d_digital->getSamplesP(d_buffer_size);
+
+			std::cout << "digital captured data!" << std::endl;
+
+		} catch (timeout_exception &e) {
+//			message_port_pub(d_port_id, pmt::mp("timeout"));
+			// tmp: ==============================================
+			pmt::pmt_t payload = pmt::from_long(0);
+			pmt::pmt_t msg = pmt::cons(pmt::mp("done"), payload);
+			post(pmt::mp("system"), msg);
+			// ===================================================
+			return 0;
 		} catch (std::exception &e) {
 			std::cout << e.what() << std::endl;
-			return -1;
+			return 0;
 		}
 		d_items_in_buffer = (unsigned long) d_buffer_size;
 		d_sample_index = 0;
@@ -117,11 +131,8 @@ int digital_in_source_impl::work(int noutput_items,
 
         add_item_tag(out_stream_index, tag);
     }
-    float *out = (float *) output_items[out_stream_index];
-    //memcpy(out, d_raw_samples + d_sample_index, sizeof(uint16_t) * nb_samples);
-    for (int i = 0; i < nb_samples; ++i) {
-		out[i] = get_channel_value(0, d_raw_samples[d_sample_index + i]);
-	}
+    uint16_t *out = (uint16_t *) output_items[out_stream_index];
+    memcpy(out, d_raw_samples + d_sample_index, sizeof(uint16_t) * nb_samples);
 	d_items_in_buffer -= nb_samples;
 	d_sample_index += nb_samples;
 
@@ -131,6 +142,16 @@ int digital_in_source_impl::work(int noutput_items,
 unsigned short digital_in_source_impl::get_channel_value(unsigned int channel, unsigned short sample)
 {
 	return (sample & (1u << channel )) >> channel;
+}
+
+void gr::m2k::digital_in_source_impl::set_buffer_size(int buffer_size)
+{
+	if (d_buffer_size != buffer_size) {
+		boost::unique_lock<boost::mutex> lock(d_buffer_mutex);
+
+		d_items_in_buffer = 0;
+		d_buffer_size = buffer_size;
+	}
 }
 
 } /* namespace m2k */
