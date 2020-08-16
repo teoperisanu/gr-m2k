@@ -36,6 +36,8 @@ private:
     libm2k::analog::M2kAnalogIn *d_analog_in;
     const std::string d_uri;
     std::vector<int> d_channels;
+
+    unsigned int d_timeout;
     bool d_deinit;
 
     unsigned int d_buffer_size;
@@ -46,7 +48,10 @@ private:
 
     pmt::pmt_t d_port_id;
 
-    boost::mutex d_buffer_mutex;
+    gr::thread::mutex d_mutex;
+    gr::thread::condition_variable d_cond_wait;
+    gr::thread::thread d_refill_thread;
+    volatile bool d_empty_buffer{}, d_thread_stopped{};
 
 public:
     analog_in_source_impl(libm2k::context::M2k *context,
@@ -64,27 +69,31 @@ public:
                           int trigger_delay,
                           std::vector<double> trigger_level,
                           bool streaming,
-                          unsigned int timeout,
                           bool deinit);
 
-    ~analog_in_source_impl();
+    ~analog_in_source_impl() override;
+
+    void refill_buffer();
 
     int work(int noutput_items,
              gr_vector_const_void_star &input_items,
-             gr_vector_void_star &output_items);
+             gr_vector_void_star &output_items) override;
+
+    bool start() override;
+    bool stop() override;
 
     void set_params(std::vector<int> ranges,
                     double sampling_frequency,
-                    int oversampling_ratio);
+                    int oversampling_ratio) override;
 
     void set_trigger(std::vector<int> trigger_condition,
                      std::vector<int> trigger_mode,
                      int trigger_source,
                      int trigger_delay,
                      std::vector<double> trigger_level,
-                     bool streaming);
+                     bool streaming) override;
 
-    void set_timeout_ms(unsigned int timeout);
+    void set_timeout_ms(unsigned int timeout) override;
 
     static libm2k::context::M2k *get_context(const std::string &uri);
 
@@ -92,7 +101,7 @@ public:
 
     static void remove_contexts(const std::string &uri);
 
-    void set_buffer_size(int buffer_size);
+    void set_buffer_size(int buffer_size) override;
 };
 
 } // namespace m2k

@@ -103,7 +103,7 @@ int digital_in_source_impl::work(int noutput_items,
 
 			std::cout << "digital captured data!" << std::endl;
 
-		} catch (timeout_exception &e) {
+		} catch (m2k_exception &e) {
 //			message_port_pub(d_port_id, pmt::mp("timeout"));
 			// tmp: ==============================================
 			pmt::pmt_t payload = pmt::from_long(0);
