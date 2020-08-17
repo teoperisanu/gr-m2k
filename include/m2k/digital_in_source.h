@@ -44,19 +44,23 @@ typedef boost::shared_ptr <digital_in_source> sptr;
  */
 static sptr make(const std::string &uri,
 		 int buffer_size,
-		 const int channel,
+		 int channel,
 		 double sampling_frequency,
 		 int kernel_buffers,
-		 bool streaming);
+		 bool streaming,
+		 bool deinit = true);
 
 static sptr make_from(libm2k::context::M2k *context,
                      int buffer_size,
-                     const int channel,
+                     int channel,
                      double sampling_frequency,
                      int kernel_buffers,
-                     bool streaming);
+                     bool streaming,
+                     bool deinit = true);
 
 virtual void set_params(double sampling_frequency, bool streaming) = 0;
+
+virtual  void set_timeout_ms(unsigned int timeout) = 0;
 
 virtual void set_buffer_size(int buffer_size) = 0;
 

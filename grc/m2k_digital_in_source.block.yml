@@ -39,8 +39,11 @@ asserts:
 
 outputs:
   - domain: stream
-    dtype: float
+    dtype: short
     multiplicity: 1
+  - domain: message
+    id: msg
+    optional: true
 
 
 templates:
